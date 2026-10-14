@@ -6,16 +6,17 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import os
+import shap
 
 # ── Page Config ─────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="MindTrace AI | Clinical Neuro-NLP Suite",
+    page_title="MindTrace AI | Clinical Explainable NLP",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ── High-Tech Futuristic Theme CSS ──────────────────────────────────────────
+# ── Styling & Custom CSS ────────────────────────────────────────────────────
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
@@ -27,7 +28,7 @@ st.markdown("""
     .hero-banner {
         background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 50%, #311042 100%);
         border-radius: 16px;
-        padding: 32px 36px;
+        padding: 30px 34px;
         color: white;
         margin-bottom: 24px;
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -35,7 +36,7 @@ st.markdown("""
     }
     
     .hero-title {
-        font-size: 2.3rem;
+        font-size: 2.2rem;
         font-weight: 800;
         background: linear-gradient(90deg, #38BDF8, #818CF8, #C084FC);
         -webkit-background-clip: text;
@@ -45,8 +46,8 @@ st.markdown("""
     
     .hero-subtitle {
         color: #94A3B8;
-        font-size: 1.05rem;
-        max-width: 850px;
+        font-size: 1.02rem;
+        max-width: 900px;
         line-height: 1.6;
     }
 
@@ -97,7 +98,7 @@ st.markdown("""
         text-align: center;
     }
     .stat-val {
-        font-size: 1.6rem;
+        font-size: 1.55rem;
         font-weight: 800;
         color: #0F172A;
     }
@@ -112,7 +113,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ── Base Setup & Resources ──────────────────────────────────────────────────
+# ── Load Core Artifacts ─────────────────────────────────────────────────────
 BASE = os.path.dirname(os.path.abspath(__file__))
 
 ARTIFACT_TERMS = [
@@ -131,67 +132,45 @@ def scrub_text(text):
     return re.sub(r"\s+", " ", t).strip()
 
 @st.cache_resource
-def load_models_and_lexicons():
+def load_models_and_explainers():
     with open(os.path.join(BASE, "model_scrubbed.pkl"), "rb") as f:
         scrubbed_bundle = pickle.load(f)
     with open(os.path.join(BASE, "model_unscrubbed.pkl"), "rb") as f:
         unscrubbed_bundle = pickle.load(f)
     with open(os.path.join(BASE, "lexicons.pkl"), "rb") as f:
         lex_data = pickle.load(f)
-    return scrubbed_bundle, unscrubbed_bundle, lex_data
+        
+    # Real-time SHAP TreeExplainer on scrubbed XGBoost
+    scrub_explainer = shap.TreeExplainer(scrubbed_bundle["model"])
+    
+    return scrubbed_bundle, unscrubbed_bundle, lex_data, scrub_explainer
 
 @st.cache_data
-def load_all_results():
+def load_all_metrics():
     results = {}
     for m in ["xgboost", "bilstm", "roberta", "mentalbert"]:
         p = os.path.join(BASE, f"{m}_results.pkl")
         if os.path.exists(p):
             with open(p, "rb") as f:
                 results[m] = pickle.load(f)
+                
     alignments = {}
     for m in ["xgboost", "roberta", "mentalbert"]:
         p = os.path.join(BASE, f"{m}_alignment.pkl")
         if os.path.exists(p):
             with open(p, "rb") as f:
                 alignments[m] = pickle.load(f)
-    return results, alignments
+                
+    shap_top = {}
+    if os.path.exists(os.path.join(BASE, "shap_top_features.pkl")):
+        with open(os.path.join(BASE, "shap_top_features.pkl"), "rb") as f:
+            shap_top = pickle.load(f)
+            
+    return results, alignments, shap_top
 
-scrubbed_pkg, unscrubbed_pkg, lexicons_pkg = load_models_and_lexicons()
-results_data, alignments_data = load_all_results()
+scrubbed_pkg, unscrubbed_pkg, lexicons_pkg, shap_explainer = load_models_and_explainers()
+results_data, alignments_data, shap_top_data = load_all_metrics()
 lexicons = lexicons_pkg.get("lexicons", {})
-
-# ── Sidebar ─────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("""
-    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-        <div style="background: linear-gradient(135deg, #6366F1, #A855F7); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);">🧠</div>
-        <div>
-            <div style="font-weight: 800; font-size: 1.25rem; color: #0F172A; letter-spacing: -0.02em;">MindTrace AI</div>
-            <div style="font-size: 0.72rem; color: #64748B; font-weight: 600; text-transform: uppercase;">Clinical Neuro-NLP</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    app_mode = st.radio(
-        "Navigation",
-        [
-            "🔮 Live Neural Diagnostic Hub",
-            "⚡ Dynamic Real-Time Text Scanner",
-            "⚖️ Shortcut vs. Clinical Stress Test",
-            "🌐 Interactive Mental Health Radar",
-            "📊 Multi-Model Research Leaderboard",
-            "📚 Clinical Instrument Explorer",
-        ]
-    )
-    
-    st.markdown("---")
-    st.markdown("**Experimental Setup**")
-    st.caption("• **Trained Dataset:** Reddit RMHD (102,984 posts)")
-    st.caption("• **Classes:** Depression, Anxiety, PTSD, Social Anxiety, Control")
-    st.caption("• **Validation:** PHQ-9, GAD-7, PCL-5, SPIN")
-    st.markdown("---")
-    st.caption("Lead Researcher: **Tanaya Salunke**")
-    st.caption("GitHub: [SMA-NLP-PROJECT--master](https://github.com/Tanayasalunke/SMA-NLP-PROJECT--master)")
 
 LABEL_METADATA = {
     "depression": {"name": "Major Depression", "scale": "PHQ-9", "color": "#2563EB", "icon": "🌧️", "severity": "High"},
@@ -228,15 +207,50 @@ def highlight_symptoms(text):
             
     return " ".join(highlighted), found_map
 
+
+# ── Sidebar ─────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("""
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+        <div style="background: linear-gradient(135deg, #6366F1, #A855F7); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);">🧠</div>
+        <div>
+            <div style="font-weight: 800; font-size: 1.25rem; color: #0F172A; letter-spacing: -0.02em;">MindTrace AI</div>
+            <div style="font-size: 0.72rem; color: #64748B; font-weight: 600; text-transform: uppercase;">Clinical Explainable NLP</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    app_mode = st.radio(
+        "Navigation",
+        [
+            "🔮 Live Diagnostic & Real-Time XAI",
+            "🔍 Global SHAP Explainability Lab",
+            "⚡ Dynamic Keystroke Scanner",
+            "⚖️ Shortcut vs. Clinical Stress Test",
+            "📊 Multi-Model Research Leaderboard",
+            "📚 Clinical Instrument Explorer",
+        ]
+    )
+    
+    st.markdown("---")
+    st.markdown("**Experimental Specifications**")
+    st.caption("• **RMHD Corpus:** 102,984 Reddit posts")
+    st.caption("• **Explainability Framework:** TreeSHAP & SAS Decomposition")
+    st.caption("• **Psychometric Targets:** PHQ-9, GAD-7, PCL-5, SPIN")
+    st.markdown("---")
+    st.caption("Project by: **Tanaya Salunke**")
+    st.caption("Repo: [SMA-NLP-PROJECT--master](https://github.com/Tanayasalunke/SMA-NLP-PROJECT--master)")
+
+
 # ────────────────────────────────────────────────────────────────────────────
-# 1. LIVE NEURAL DIAGNOSTIC HUB
+# 1. LIVE DIAGNOSTIC & REAL-TIME XAI (SHAP)
 # ────────────────────────────────────────────────────────────────────────────
-if app_mode == "🔮 Live Neural Diagnostic Hub":
+if app_mode == "🔮 Live Diagnostic & Real-Time XAI":
     st.markdown("""
     <div class="hero-banner">
-        <div class="live-badge"><div class="pulse-dot"></div>Live Diagnostic Engine Active</div>
-        <div class="hero-title">Neural Mental Health State Classifier</div>
-        <div class="hero-subtitle">Real-time inference pipeline equipped with DSM-5 / clinical symptom tagging. Evaluates natural social media text against PHQ-9, GAD-7, PCL-5, and SPIN psychiatric scales.</div>
+        <div class="live-badge"><div class="pulse-dot"></div>TreeSHAP Explainability Engine Active</div>
+        <div class="hero-title">Live Diagnostic & Local XAI Explainer</div>
+        <div class="hero-subtitle">Generates multi-class clinical predictions and calculates exact real-time SHAP feature importance values for the active text, exposing token-level influence on the model's decision.</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -252,16 +266,16 @@ if app_mode == "🔮 Live Neural Diagnostic Hub":
     col_input, col_meta = st.columns([2.5, 1.2])
 
     with col_meta:
-        st.markdown("**Preset Scenarios:**")
-        chosen_sample = st.selectbox("Select clinical archetype:", list(samples.keys()))
+        st.markdown("**Clinical Archetypes:**")
+        chosen_sample = st.selectbox("Load representative case:", list(samples.keys()))
         selected_text = samples[chosen_sample] if chosen_sample != "Custom Input" else ""
 
     with col_input:
         user_text = st.text_area(
-            "Social Media Post / Text Transcript:",
+            "Patient Narrative / Social Media Post:",
             value=selected_text,
             height=140,
-            placeholder="Type or paste post text here to analyze psychological indicators in real-time..."
+            placeholder="Type or paste post text here to analyze psychological indicators with real-time SHAP..."
         )
 
     if user_text.strip():
@@ -357,10 +371,52 @@ if app_mode == "🔮 Live Neural Diagnostic Hub":
             fig_bar.update_layout(showlegend=False, height=340, margin=dict(l=0, r=30, t=45, b=10), xaxis=dict(range=[0, 1]))
             st.plotly_chart(fig_bar, use_container_width=True)
 
+        # ── REAL-TIME LOCAL XAI (SHAP WATERFALL / BAR) ──────────────────────
+        st.markdown("### 🧬 Real-Time Local SHAP Explanation (XAI)")
+        st.caption(f"Calculating exact TreeSHAP attribution for predicted state: **{meta['name']}**")
+
+        try:
+            shap_vals = shap_explainer.shap_values(vec)
+            # shap_vals shape: (1, n_features, n_classes)
+            if isinstance(shap_vals, np.ndarray) and len(shap_vals.shape) == 3:
+                pred_shap = shap_vals[0, :, pred_idx]
+            elif isinstance(shap_vals, list):
+                pred_shap = shap_vals[pred_idx][0]
+            else:
+                pred_shap = shap_vals[0]
+
+            feature_names = vectorizer.get_feature_names_out()
+            # Non-zero tokens in user input
+            nz_indices = vec.nonzero()[1]
+            
+            if len(nz_indices) > 0:
+                token_shaps = []
+                for idx in nz_indices:
+                    val = pred_shap[idx]
+                    token = feature_names[idx]
+                    token_shaps.append({"Token": token, "SHAP Impact": val, "Direction": "Positive (Supports)" if val > 0 else "Negative (Opposes)"})
+                    
+                df_local_shap = pd.DataFrame(token_shaps).sort_values("SHAP Impact", ascending=True)
+                
+                fig_local_shap = px.bar(
+                    df_local_shap,
+                    x="SHAP Impact",
+                    y="Token",
+                    orientation="h",
+                    color="Direction",
+                    color_discrete_map={"Positive (Supports)": "#10B981", "Negative (Opposes)": "#EF4444"},
+                    title=f"<b>Token-Level SHAP Impact Driving Decision: {meta['name']}</b>",
+                    labels={"SHAP Impact": "SHAP Attribution (Log-Odds Contribution)"}
+                )
+                fig_local_shap.update_layout(height=max(250, len(df_local_shap)*28), margin=dict(l=0, r=20, t=40, b=10))
+                st.plotly_chart(fig_local_shap, use_container_width=True)
+            else:
+                st.info("Input text does not contain known vocabulary features.")
+        except Exception as e:
+            st.warning(f"Note on SHAP calculation: {e}")
+
         # Clinical X-Ray Section
-        st.markdown("### 🔬 Clinical Symptom 'X-Ray' & Token Decomposition")
-        st.caption("Each word is cross-referenced with DSM-5 diagnostic survey batteries in real time.")
-        
+        st.markdown("### 🔬 Clinical Symptom 'X-Ray' & Diagnostic Battery Mapping")
         annotated_html, found_dict = highlight_symptoms(user_text)
         
         st.markdown(f"""
@@ -369,19 +425,84 @@ if app_mode == "🔮 Live Neural Diagnostic Hub":
         </div>
         """, unsafe_allow_html=True)
         
-        # Detected symptoms badge bar
         st.markdown("<br>", unsafe_allow_html=True)
         b_cols = st.columns(4)
-        b_cols[0].markdown(f"**PHQ-9 Tokens ({len(found_dict['PHQ9'])}):** " + (", ".join(found_dict["PHQ9"]) if found_dict["PHQ9"] else "None"))
-        b_cols[1].markdown(f"**GAD-7 Tokens ({len(found_dict['GAD7'])}):** " + (", ".join(found_dict["GAD7"]) if found_dict["GAD7"] else "None"))
-        b_cols[2].markdown(f"**PCL-5 Tokens ({len(found_dict['PCL5'])}):** " + (", ".join(found_dict["PCL5"]) if found_dict["PCL5"] else "None"))
-        b_cols[3].markdown(f"**SPIN Tokens ({len(found_dict['SPIN'])}):** " + (", ".join(found_dict["SPIN"]) if found_dict["SPIN"] else "None"))
+        b_cols[0].markdown(f"**PHQ-9 Symptoms ({len(found_dict['PHQ9'])}):** " + (", ".join(found_dict["PHQ9"]) if found_dict["PHQ9"] else "None"))
+        b_cols[1].markdown(f"**GAD-7 Symptoms ({len(found_dict['GAD7'])}):** " + (", ".join(found_dict["GAD7"]) if found_dict["GAD7"] else "None"))
+        b_cols[2].markdown(f"**PCL-5 Symptoms ({len(found_dict['PCL5'])}):** " + (", ".join(found_dict["PCL5"]) if found_dict["PCL5"] else "None"))
+        b_cols[3].markdown(f"**SPIN Symptoms ({len(found_dict['SPIN'])}):** " + (", ".join(found_dict["SPIN"]) if found_dict["SPIN"] else "None"))
 
 
 # ────────────────────────────────────────────────────────────────────────────
-# 2. DYNAMIC REAL-TIME TEXT SCANNER (LIVE KEYSTROKE INTERACTION)
+# 2. GLOBAL SHAP EXPLAINABILITY LAB (XAI)
 # ────────────────────────────────────────────────────────────────────────────
-elif app_mode == "⚡ Dynamic Real-Time Text Scanner":
+elif app_mode == "🔍 Global SHAP Explainability Lab":
+    st.markdown("""
+    <div class="hero-banner">
+        <div class="live-badge">Global Explainable AI (XAI)</div>
+        <div class="hero-title">Global Feature Importance & Alignment Analysis</div>
+        <div class="hero-subtitle">Computed over the entire 102,984-post corpus using TreeSHAP. Inspect the most influential linguistic markers for each mental health category under the scrubbed experimental condition.</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    scrubbed_top = shap_top_data.get("scrubbed", {})
+    if scrubbed_top:
+        selected_class = st.selectbox(
+            "Select Psychological Condition to Inspect Global SHAP Attributions:",
+            list(scrubbed_top.keys()),
+            format_func=lambda x: f"{LABEL_METADATA.get(x, {}).get('icon', '')} {LABEL_METADATA.get(x, {}).get('name', x.title())}"
+        )
+        
+        top_list = scrubbed_top[selected_class]
+        df_top = pd.DataFrame(top_list).sort_values("mean_abs_shap", ascending=True)
+        
+        # Tag each feature
+        scale_map = {}
+        for s_name, s_words in lexicons.items():
+            for w in s_words:
+                scale_map[w.lower()] = s_name
+                
+        df_top["Lexicon Status"] = df_top["feature"].apply(
+            lambda f: f"Clinical ({scale_map[f.lower()]})" if f.lower() in scale_map else "General Language"
+        )
+        
+        col_g1, col_g2 = st.columns([2.5, 1.2])
+        
+        with col_g1:
+            fig_global = px.bar(
+                df_top,
+                x="mean_abs_shap",
+                y="feature",
+                orientation="h",
+                color="Lexicon Status",
+                color_discrete_map={
+                    "Clinical (PHQ9)": "#2563EB",
+                    "Clinical (GAD7)": "#D97706",
+                    "Clinical (PCL5)": "#7C3AED",
+                    "Clinical (SPIN)": "#DB2777",
+                    "General Language": "#94A3B8"
+                },
+                title=f"<b>Top SHAP Features for {LABEL_METADATA[selected_class]['name']} (Scrubbed Condition)</b>",
+                labels={"mean_abs_shap": "Mean |SHAP Value| (Global Feature Importance)", "feature": "Vocabulary Token"}
+            )
+            fig_global.update_layout(height=480, margin=dict(l=0, r=20, t=40, b=20))
+            st.plotly_chart(fig_global, use_container_width=True)
+            
+        with col_g2:
+            st.markdown(f"#### Clinical Insights: {LABEL_METADATA[selected_class]['name']}")
+            st.markdown(f"• **Scale:** {LABEL_METADATA[selected_class]['scale']}")
+            st.markdown(f"• **Dominant Signal:** In the scrubbed model, top features reflect genuine pathological expressions rather than subreddit self-referencing.")
+            
+            clinical_tokens = df_top[df_top["Lexicon Status"].str.startswith("Clinical")]
+            st.markdown(f"• **Clinical Lexicon Hits in Top Set:** `{len(clinical_tokens)} / {len(df_top)}`")
+            for _, r in clinical_tokens.iterrows():
+                st.markdown(f"  - **`{r['feature']}`** → *{r['Lexicon Status']}* (`{r['mean_abs_shap']:.3f}`)")
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# 3. DYNAMIC REAL-TIME TEXT SCANNER
+# ────────────────────────────────────────────────────────────────────────────
+elif app_mode == "⚡ Dynamic Keystroke Scanner":
     st.markdown("""
     <div class="hero-banner">
         <div class="live-badge"><div class="pulse-dot"></div>Interactive Keystroke Scanner</div>
@@ -408,7 +529,6 @@ elif app_mode == "⚡ Dynamic Real-Time Text Scanner":
         pred_idx = np.argmax(probs)
         pred_label = classes[pred_idx]
         
-        # Word Impact Matrix
         feature_names = vectorizer.get_feature_names_out()
         nz_indices = vec.nonzero()[1]
         active_words = [feature_names[i] for i in nz_indices]
@@ -438,7 +558,7 @@ elif app_mode == "⚡ Dynamic Real-Time Text Scanner":
 
 
 # ────────────────────────────────────────────────────────────────────────────
-# 3. SHORTCUT VS. CLINICAL STRESS TEST
+# 4. SHORTCUT VS. CLINICAL STRESS TEST
 # ────────────────────────────────────────────────────────────────────────────
 elif app_mode == "⚖️ Shortcut vs. Clinical Stress Test":
     st.markdown("""
@@ -534,44 +654,6 @@ elif app_mode == "⚖️ Shortcut vs. Clinical Stress Test":
                 )
                 fig2.update_layout(height=360)
                 st.plotly_chart(fig2, use_container_width=True)
-
-
-# ────────────────────────────────────────────────────────────────────────────
-# 4. INTERACTIVE MENTAL HEALTH RADAR
-# ────────────────────────────────────────────────────────────────────────────
-elif app_mode == "🌐 Interactive Mental Health Radar":
-    st.markdown("""
-    <div class="hero-banner">
-        <div class="live-badge">Symptom Exploration Radar</div>
-        <div class="hero-title">Interactive Multi-Axis Psychological Radar</div>
-        <div class="hero-subtitle">Adjust simulated symptom intensities to visualize how psychiatric comorbidities shift the model's multi-class decision boundary.</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    sl_col1, sl_col2, sl_col3, sl_col4 = st.columns(4)
-    with sl_col1:
-        s_dep = st.slider("Depression Symptoms (PHQ-9)", 0, 100, 75)
-    with sl_col2:
-        s_anx = st.slider("Anxiety Symptoms (GAD-7)", 0, 100, 45)
-    with sl_col3:
-        s_ptsd = st.slider("Trauma / PTSD (PCL-5)", 0, 100, 20)
-    with sl_col4:
-        s_soc = st.slider("Social Phobia (SPIN)", 0, 100, 15)
-
-    tot = s_dep + s_anx + s_ptsd + s_soc + 20
-    sim_probs = [s_anx/tot, 20/tot, s_dep/tot, s_ptsd/tot, s_soc/tot]
-    sim_classes = ["Anxiety", "Control", "Depression", "PTSD", "Social Anxiety"]
-
-    fig_sim = px.line_polar(
-        pd.DataFrame({"Dimension": sim_classes, "Intensity": sim_probs}),
-        r="Intensity",
-        theta="Dimension",
-        line_close=True,
-        title="<b>Composite Psychological Comorbidity Profile</b>"
-    )
-    fig_sim.update_traces(fill="toself", fillcolor="rgba(99, 102, 241, 0.25)", line_color="#6366F1", line_width=3)
-    fig_sim.update_layout(height=420)
-    st.plotly_chart(fig_sim, use_container_width=True)
 
 
 # ────────────────────────────────────────────────────────────────────────────
