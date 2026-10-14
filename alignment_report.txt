@@ -1,0 +1,51 @@
+
+======================================================================
+ALIGNMENT REPORT
+======================================================================
+
+-- UNSCRUBBED ARM  (primary k=50, weighted) --
+Class               SAS    SPUR     AMB           SAS 95%CI          SPUR 95%CI
+  anxiety         0.195   0.456   0.350    [0.189,0.200]  [0.450,0.461]
+  control         0.000   0.137   0.863    [0.000,0.000]  [0.132,0.144]
+  depression      0.139   0.370   0.491    [0.132,0.145]  [0.362,0.378]
+  ptsd            0.266   0.427   0.307    [0.260,0.273]  [0.420,0.434]
+  social_anxiety   0.304   0.166   0.530    [0.298,0.310]  [0.161,0.172]
+
+-- SCRUBBED ARM  (primary k=50, weighted) --
+Class               SAS    SPUR     AMB           SAS 95%CI          SPUR 95%CI
+  anxiety         0.325   0.000   0.675    [0.318,0.331]  [0.000,0.000]
+  control         0.000   0.000   1.000    [0.000,0.000]  [0.000,0.000]
+  depression      0.204   0.000   0.796    [0.195,0.212]  [0.000,0.000]
+  ptsd            0.501   0.000   0.499    [0.494,0.509]  [0.000,0.000]
+  social_anxiety   0.376   0.000   0.624    [0.370,0.384]  [0.000,0.000]
+
+-- UNWEIGHTED VARIANT (appendix, k=50) --
+Class              SAS_uw   SPUR_uw    AMB_uw  (unscrubbed / scrubbed)
+  anxiety         0.180 /  0.160    0.060 /  0.000    0.760 /  0.840
+  control         0.000 /  0.000    0.040 /  0.000    0.960 /  1.000
+  depression      0.100 /  0.100    0.060 /  0.000    0.840 /  0.900
+  ptsd            0.280 /  0.320    0.060 /  0.000    0.660 /  0.680
+  social_anxiety   0.120 /  0.120    0.080 /  0.000    0.800 /  0.880
+
+-- DELTA SAS (scrubbed - unscrubbed) --
+  anxiety          +0.130
+  control          +0.000
+  depression       +0.065
+  ptsd             +0.235
+  social_anxiety   +0.073
+
+-- SENSITIVITY (SAS at k=20,50,100 -- unscrubbed) --
+Class              k=20    k=50   k=100
+  anxiety           0.201   0.195   0.180
+  control           0.000   0.000   0.000
+  depression        0.168   0.139   0.129
+  ptsd              0.295   0.266   0.258
+  social_anxiety    0.360   0.304   0.271
+
+-- SENSITIVITY (SAS at k=20,50,100 -- scrubbed) --
+Class              k=20    k=50   k=100
+  anxiety           0.382   0.325   0.280
+  control           0.000   0.000   0.000
+  depression        0.292   0.204   0.182
+  ptsd              0.607   0.501   0.459
+  social_anxiety    0.450   0.376   0.331

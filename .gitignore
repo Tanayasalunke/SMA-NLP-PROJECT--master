@@ -1,0 +1,44 @@
+# ── Large dataset files (download from Zenodo 3941387) ──────────────────────
+*_pre_features_tfidf_256.csv
+
+# ── Generated CSV checkpoints (produced by 01_pipeline.py) ──────────────────
+merged_raw.csv
+merged_balanced.csv
+train_df.csv
+test_df.csv
+
+# ── Transformer & Model Weight Directories (~GBs) ───────────────────────────
+transformer_unscrubbed/
+transformer_scrubbed/
+roberta_scrubbed/
+roberta_unscrubbed/
+mentalbert_scrubbed/
+mentalbert_unscrubbed/
+distilbert-base-uncased/
+test_trainer/
+*.pt
+*.safetensors
+*.bin
+
+# ── Word vectors & Archives ───────────────────────────────────────────────────
+glove.6B.*
+*.zip
+
+# ── Lab folders & JDK binaries ────────────────────────────────────────────────
+smlbda_*/
+assignment7/
+hdfs_simulation/
+archive/
+
+# ── Python, Virtual Environments & OS noise ──────────────────────────────────
+venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db
+*.egg-info/
+.env
+~$*.docx
+kaggle_upload/train_df.csv
+kaggle_upload/test_df.csv
+
