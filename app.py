@@ -238,7 +238,6 @@ with st.sidebar:
     st.caption("• **Explainability Framework:** TreeSHAP & SAS Decomposition")
     st.caption("• **Psychometric Targets:** PHQ-9, GAD-7, PCL-5, SPIN")
     st.markdown("---")
-    st.caption("Project by: **Tanaya Salunke**")
     st.caption("Repo: [SMA-NLP-PROJECT--master](https://github.com/Tanayasalunke/SMA-NLP-PROJECT--master)")
 
 
