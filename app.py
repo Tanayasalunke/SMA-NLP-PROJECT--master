@@ -223,7 +223,7 @@ with st.sidebar:
     app_mode = st.radio(
         "Navigation",
         [
-            "🔮 Live Diagnostic & Real-Time XAI",
+            "🔮 Live Diagnostic & Real-Time Explainability",
             "🔍 Global SHAP Explainability Lab",
             "⚡ Dynamic Keystroke Scanner",
             "⚖️ Shortcut vs. Clinical Stress Test",
@@ -242,13 +242,13 @@ with st.sidebar:
 
 
 # ────────────────────────────────────────────────────────────────────────────
-# 1. LIVE DIAGNOSTIC & REAL-TIME XAI (SHAP)
+# 1. LIVE DIAGNOSTIC & REAL-TIME EXPLAINABILITY (SHAP)
 # ────────────────────────────────────────────────────────────────────────────
-if app_mode == "🔮 Live Diagnostic & Real-Time XAI":
+if app_mode == "🔮 Live Diagnostic & Real-Time Explainability":
     st.markdown("""
     <div class="hero-banner">
         <div class="live-badge"><div class="pulse-dot"></div>TreeSHAP Explainability Engine Active</div>
-        <div class="hero-title">Live Diagnostic & Local XAI Explainer</div>
+        <div class="hero-title">Live Diagnostic & Local Model Explainer</div>
         <div class="hero-subtitle">Generates multi-class clinical predictions and calculates exact real-time SHAP feature importance values for the active text, exposing token-level influence on the model's decision.</div>
     </div>
     """, unsafe_allow_html=True)
@@ -370,8 +370,8 @@ if app_mode == "🔮 Live Diagnostic & Real-Time XAI":
             fig_bar.update_layout(showlegend=False, height=340, margin=dict(l=0, r=30, t=45, b=10), xaxis=dict(range=[0, 1]))
             st.plotly_chart(fig_bar, use_container_width=True)
 
-        # ── REAL-TIME LOCAL XAI (SHAP WATERFALL / BAR) ──────────────────────
-        st.markdown("### 🧬 Real-Time Local SHAP Explanation (XAI)")
+        # ── REAL-TIME LOCAL SHAP EXPLANATION (WATERFALL / BAR) ──────────────
+        st.markdown("### 🧬 Real-Time Local SHAP Explanation")
         st.caption(f"Calculating exact TreeSHAP attribution for predicted state: **{meta['name']}**")
 
         try:
@@ -433,12 +433,12 @@ if app_mode == "🔮 Live Diagnostic & Real-Time XAI":
 
 
 # ────────────────────────────────────────────────────────────────────────────
-# 2. GLOBAL SHAP EXPLAINABILITY LAB (XAI)
+# 2. GLOBAL SHAP EXPLAINABILITY LAB
 # ────────────────────────────────────────────────────────────────────────────
 elif app_mode == "🔍 Global SHAP Explainability Lab":
     st.markdown("""
     <div class="hero-banner">
-        <div class="live-badge">Global Explainable AI (XAI)</div>
+        <div class="live-badge">Global Feature Explainability</div>
         <div class="hero-title">Global Feature Importance & Alignment Analysis</div>
         <div class="hero-subtitle">Computed over the entire 102,984-post corpus using TreeSHAP. Inspect the most influential linguistic markers for each mental health category under the scrubbed experimental condition.</div>
     </div>
